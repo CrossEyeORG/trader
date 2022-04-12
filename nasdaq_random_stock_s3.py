@@ -47,7 +47,6 @@ class Nasdaq:
                 out.append(''.join(buff))
         out.pop(0)
         out.pop(len(out)-1)
-        print(out)
         return out
     def get_random_stock(self):
         return random.choice(self.stock_list)
