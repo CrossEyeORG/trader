@@ -26,7 +26,7 @@ class Nasdaq:
         json_content = json.loads(file_content)
         return json_content
     def s3_upload(self, stock_list):
-        s3_obj = self.s3.Object(CONFIG.NASDAQ_S3_BUCKET, CONFIG.NASDAQ_S3_OBJECT)
+        s3_obj = self.s3.Object(S3_BUCKET, S3_OBJECT)
         s3_obj.put(Body=(bytes(json.dumps(stock_list).encode('UTF-8'))))
         return
     def update_stock_list(self):
