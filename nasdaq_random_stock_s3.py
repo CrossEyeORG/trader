@@ -12,7 +12,7 @@ S3_OBJECT = 'stocks.json'
 class Nasdaq:
     def __init__(self):
         self.s3 = boto3.resource('s3', region_name=AWS_REGION)
-        self.stock_list = self.s3_download()
+        self.stock_list = self.update_stock_list()
     def download_source(self):
         data = BytesIO()
         with FTP('ftp.nasdaqtrader.com') as ftp:
@@ -25,11 +25,14 @@ class Nasdaq:
         file_content = s3_obj.get()['Body'].read().decode('utf-8')
         json_content = json.loads(file_content)
         return json_content
-    def s3_upload(self):
+    def s3_upload(self, stock_list):
+        s3_obj = self.s3.Object(CONFIG.NASDAQ_S3_BUCKET, CONFIG.NASDAQ_S3_OBJECT)
+        s3_obj.put(Body=(bytes(json.dumps(stock_list).encode('UTF-8'))))
+        return
+    def update_stock_list(self):
         __data = self.download_source()
         stock_list = self.format(__data)
-        s3_obj = self.s3.Object(S3_BUCKET, S3_OBJECT)
-        s3_obj.put(Body=(bytes(json.dumps(stock_list).encode('UTF-8'))))
+        self.s3_upload(stock_list)
         return stock_list
     def format(self, data):
         out = []
@@ -49,7 +52,5 @@ class Nasdaq:
         out.pop(len(out)-1)
         return out
     def get_random_stock(self):
-        return random.choice(self.stock_list)
-
-s = Nasdaq()
-s.get_random_stock()
+        random_stock = self.s3_download()
+        return random.choice(random_stock)
