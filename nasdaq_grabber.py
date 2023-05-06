@@ -11,7 +11,6 @@ class Nasdaq:
         with FTP('ftp.nasdaqtrader.com') as ftp:
             ftp.login()
             ftp.retrbinary('RETR /SymbolDirectory/nasdaqlisted.txt', data.write)
-        
         data.seek(0)
         return data.read().decode()
     def format(self, data):
