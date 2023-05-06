@@ -1,25 +1,39 @@
 import boto3
 import json
 import random
+import time
 from ftplib import FTP
 from io import BytesIO
 
 
 AWS_REGION = 'us-west-2'
+NUMBER_OF_RETRIES = 10
 S3_BUCKET = 's3bucketname'
 S3_OBJECT = 'stocks.json'
+SLEEP_IN_SECONDS = 1
 
 class Nasdaq:
     def __init__(self):
         self.s3 = boto3.resource('s3', region_name=AWS_REGION)
         self.stock_list = self.update_stock_list()
     def download_source(self):
+        count = 0
         data = BytesIO()
-        with FTP('ftp.nasdaqtrader.com') as ftp:
-            ftp.login()
-            ftp.retrbinary('RETR /SymbolDirectory/nasdaqlisted.txt', data.write)
-        data.seek(0)
-        return data.read().decode()
+        while True:
+            try:
+                with FTP('ftp.nasdaqtrader.com') as ftp:
+                    ftp.login()
+                    ftp.retrbinary('RETR /SymbolDirectory/nasdaqlisted.txt', data.write)
+            except:
+                if count == NUMBER_OF_RETRIES:
+                    raise Exception(f'Failed to download source after {count} retries.')
+                else:
+                    sleep = (SLEEP_IN_SECONDS * 2 ** count + random.uniform(0, 1))
+                    time.sleep(sleep)
+                    count += 1
+                    continue
+            data.seek(0)
+            return data.read().decode()
     def s3_download(self):
         s3_obj = self.s3.Object(S3_BUCKET, S3_OBJECT)
         file_content = s3_obj.get()['Body'].read().decode('utf-8')
